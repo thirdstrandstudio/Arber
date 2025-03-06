@@ -27,7 +27,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         public
         initializer
     {
-        __Ownable_init(msg.sender);
+        __Ownable_init(_msgSender());
         __UUPSUpgradeable_init();
 
         slippageTolerance = _slippageTolerance;
