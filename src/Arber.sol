@@ -6,6 +6,7 @@ import "@openzeppelin-contracts/access/Ownable.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
+
 contract BscAmmArbitrage is Ownable {
 
     address[] public routers;
@@ -39,7 +40,6 @@ contract BscAmmArbitrage is Ownable {
 
         require(bestPrice > worstPrice, "No profitable arbitrage");
 
-        // Execute trade: buy from worst, sell to best
         IERC20(token0).transferFrom(msg.sender, address(this), amountIn);
         IERC20(token0).approve(worstRouter, amountIn);
 
