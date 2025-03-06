@@ -11,6 +11,17 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    event ArbitrageOpportunity(
+        address indexed token0,
+        address indexed token1,
+        address bestRouter,
+        address worstRouter,
+        uint256 amountIn,
+        uint256 bestPrice,
+        uint256 worstPrice,
+        uint256 profit
+    );
+
     EnumerableSet.AddressSet private routers;
 
     uint256 public slippageTolerance; // e.g., 50 = 0.5%
@@ -40,7 +51,11 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    function executeArbitrage(address token0, address token1, uint256 amountIn) public onlyOwner returns (bool) {
+    function executeArbitrage(address token0, address token1, uint256 amountIn, bool dryRun)
+        public
+        onlyOwner
+        returns (bool)
+    {
         uint256 bestPrice;
         uint256 worstPrice = type(uint256).max;
         address bestRouter;
@@ -66,6 +81,12 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
             return false;
         }
 
+        emit ArbitrageOpportunity(token0, token1, bestRouter, worstRouter, amountIn, bestPrice, worstPrice, profit);
+
+        if (dryRun) {
+            return true;
+        }
+
         IERC20(token0).transferFrom(msg.sender, address(this), amountIn);
         IERC20(token0).approve(worstRouter, amountIn);
 
@@ -89,13 +110,13 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         return true;
     }
 
-    function iteratePairList(uint256 start, uint256 n, uint256 amountIn) external onlyOwner {
+    function iteratePairList(uint256 start, uint256 n, uint256 amountIn, bool dryRun) external onlyOwner {
         uint256 len = pairList.length;
         require(len > 0, "pairList is empty");
 
         for (uint256 i = 0; i < n; i++) {
             uint256 index = (start + i) % len;
-            executeArbitrage(pairList[index].token0, pairList[index].token1, amountIn);
+            executeArbitrage(pairList[index].token0, pairList[index].token1, amountIn, dryRun);
         }
     }
 
