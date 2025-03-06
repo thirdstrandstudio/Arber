@@ -1,0 +1,23 @@
+{
+  "solidity.formatter": "forge",
+  "[solidity]": {
+    "editor.defaultFormatter": "NomicFoundation.hardhat-solidity"
+  }
+  // "[solidity]": {
+  //   "editor.defaultFormatter": "JuanBlanco.solidity"
+  // },
+  // "solidity.compileUsingRemoteVersion": "v0.8.28",
+  // //"solidity.packageDefaultDependenciesContractsDirectory": "['src', '', 'contracts']",
+  // //"solidity.packageDefaultDependenciesDirectory": "lib",
+  // "solidity.remappings": [
+  //   "@openzeppelin-contracts-upgradeable=lib/openzeppelin-contracts-upgradeable/contracts",
+  //   "@openzeppelin-contracts/=lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/", 
+  //   "forge-std=lib/forge-std/src/",
+  //   "@security=src/security/",
+  //   "@tokens=src/tokens/",
+  //   "@accounts=lib/account-abstraction/contracts",
+  //   "@interfaces=src/interfaces",
+  //   "@trex=lib/T-REX/contracts",
+  //   "@onchain-id/solidity/contracts=lib/onchain-id-solidity/contracts"
+  // ]
+}
