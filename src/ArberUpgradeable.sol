@@ -19,8 +19,6 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
     address public weth;
     mapping(address => mapping(address => TokenPair)) private pairMapping;
 
-    uint256 public slippageTolerance; // e.g., 50 = 0.5%
-
     struct WethPath {
         address[] paths;
         address router;
@@ -35,10 +33,9 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
 
     TokenPair[] public pairList;
 
-    function initialize(address[] memory _routers, uint256 _slippageTolerance) public initializer {
+    function initialize(address[] memory _routers) public initializer {
         __Ownable_init(_msgSender());
         __UUPSUpgradeable_init();
-        slippageTolerance = _slippageTolerance;
         for (uint256 i = 0; i < _routers.length; i++) {
             routers.add(_routers[i]);
         }
@@ -122,7 +119,8 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    function executeArbitrage(address token0, address token1, uint256 amountIn, bool dryRun, uint256 gasUsed)
+    //Slippage tolerance 50 = 0.5%
+    function executeArbitrage(address token0, address token1, uint256 amountIn, uint256 slippageTolerance, uint256 gasUsed, bool dryRun)
         public
         onlyOwner
         returns (bool)
@@ -137,15 +135,22 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         TokenPair memory tokenPair = pairMapping[token0][token1];
 
         for (uint256 i = 0; i < tokenPair.routers.length; i++) {
-            uint256 amountOut = getAmountsOut(tokenPair.routers[i], token0, token1, amountIn);
-            if (amountOut > bestPrice) {
-                bestPrice = amountOut;
-                bestRouter = tokenPair.routers[i];
+            try this.getAmountsOut(tokenPair.routers[i], token0, token1, amountIn) returns (uint256 amountOut) {
+                if (amountOut > bestPrice) {
+                    bestPrice = amountOut;
+                    bestRouter = tokenPair.routers[i];
+                }
+                if (amountOut < worstPrice) {
+                    worstPrice = amountOut;
+                    worstRouter = tokenPair.routers[i];
+                }
+            } catch {
+                emit RouterError(tokenPair.routers[i], "Failed to fetch price");
             }
-            if (amountOut < worstPrice) {
-                worstPrice = amountOut;
-                worstRouter = tokenPair.routers[i];
-            }
+        }
+
+        if(bestRouter == address(0) || worstRouter == address(0)) {
+            return false;
         }
 
         uint256 minBestPrice = bestPrice - ((bestPrice * slippageTolerance) / 10000);
@@ -184,13 +189,13 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         path[1] = token0;
 
         IUniswapV2Router02(bestRouter).swapExactTokensForTokens(
-            amountsReceived[1], minBestPrice, path, msg.sender, block.timestamp
+            amountsReceived[1], minBestPrice, path, _msgSender(), block.timestamp
         );
 
         return true;
     }
 
-    function iteratePairList(uint256 start, uint256 n, uint256 amountIn, bool dryRun) external onlyOwner {
+    function iteratePairList(uint256 start, uint256 n, uint256 amountIn, uint256 slippageTolerance, bool dryRun) external onlyOwner {
         uint256 gasStart = gasleft();
         uint256 gasDividedPerTx = gasStart / n;
         uint256 len = pairList.length;
@@ -198,7 +203,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
 
         for (uint256 i = 0; i < n; i++) {
             uint256 index = (start + i) % len;
-            executeArbitrage(pairList[index].token0, pairList[index].token1, amountIn, dryRun, gasDividedPerTx);
+            executeArbitrage(pairList[index].token0, pairList[index].token1, amountIn, slippageTolerance, gasDividedPerTx, dryRun);
         }
     }
 
