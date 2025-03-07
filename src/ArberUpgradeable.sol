@@ -7,35 +7,14 @@ import "@openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin-contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "./IArberUpgradeable.sol";
 
-contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable, IArberUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
-
-    event ArbitrageOpportunity(
-        address indexed token0, address indexed token1, address bestRouter, address worstRouter, uint256[4] data
-    ); //data = uint256 amountIn, uint256 bestPrice, uint256 worstPrice, uint256 profit
-
-    event RouterError(
-        address indexed router,
-        string message
-    );
 
     EnumerableSet.AddressSet private routers;
     address public weth;
     mapping(address => mapping(address => TokenPair)) private pairMapping;
-
-    struct WethPath {
-        address[] paths;
-        address router;
-    }
-
-    struct TokenPair {
-        address token0;
-        address token1;
-        address[] routers;
-        WethPath[] wethPaths;
-    }
-
     TokenPair[] public pairList;
 
     function initialize(address[] memory _routers) public initializer {
@@ -46,7 +25,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         }
     }
 
-    function getWethPaths(address token, address token1) public view returns (WethPath[] memory) {
+    function getWethPaths(address token, address token1) public view override returns (WethPath[] memory) {
         address[] memory path = new address[](2);
         path[0] = weth;
         path[1] = token;
@@ -108,7 +87,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         return wethPaths;
     }
 
-    function getWethPriceInToken0(address token0, address token1) public view returns (uint256) {
+    function getWethPriceInToken0(address token0, address token1) public view override returns (uint256) {
         TokenPair memory pair = pairMapping[token0][token1];
         require(pair.wethPaths.length > 0, "Need more than one weth path");
 
@@ -125,11 +104,14 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     //Slippage tolerance 50 = 0.5%
-    function executeArbitrage(address token0, address token1, uint256 amountIn, uint256 slippageTolerance, uint256 gasUsed, bool dryRun)
-        public
-        onlyOwner
-        returns (bool)
-    {
+    function executeArbitrage(
+        address token0,
+        address token1,
+        uint256 amountIn,
+        uint256 slippageTolerance,
+        uint256 gasUsed,
+        bool dryRun
+    ) public override onlyOwner returns (bool) {
         if (gasUsed == 0) {
             gasUsed = gasleft();
         }
@@ -154,7 +136,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
             }
         }
 
-        if(bestRouter == address(0) || worstRouter == address(0)) {
+        if (bestRouter == address(0) || worstRouter == address(0)) {
             return false;
         }
 
@@ -200,21 +182,31 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         return true;
     }
 
-    function iteratePairList(uint256 start, uint256 n, uint256 amountIn, uint256 slippageTolerance, bool dryRun) external onlyOwner {
-        uint256 gasStart = gasleft();
+    function iteratePairList(
+        uint256 start,
+        uint256 n,
+        uint256 amountIn,
+        uint256 slippageTolerance,
+        uint256 gasUsed,
+        bool dryRun
+    ) public override onlyOwner {
+        uint256 gasStart = gasUsed == 0 ? gasleft() : gasUsed;
         uint256 gasDividedPerTx = gasStart / n;
         uint256 len = pairList.length;
         require(len > 0, "pairList is empty");
 
         for (uint256 i = 0; i < n; i++) {
             uint256 index = (start + i) % len;
-            executeArbitrage(pairList[index].token0, pairList[index].token1, amountIn, slippageTolerance, gasDividedPerTx, dryRun);
+            executeArbitrage(
+                pairList[index].token0, pairList[index].token1, amountIn, slippageTolerance, gasDividedPerTx, dryRun
+            );
         }
     }
 
     function getAmountsOut(address router, address tokenIn, address tokenOut, uint256 amountIn)
         public
         view
+        override
         returns (uint256)
     {
         address[] memory path = new address[](2);
@@ -224,19 +216,19 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         return amounts[1];
     }
 
-    function addRouter(address router) external onlyOwner {
+    function addRouter(address router) public override onlyOwner {
         routers.add(router);
     }
 
-    function removeRouter(address router) external onlyOwner {
+    function removeRouter(address router) public override onlyOwner {
         routers.remove(router);
     }
 
-    function getRouters() external view returns (address[] memory) {
+    function getRouters() public view override returns (address[] memory) {
         return routers.values();
     }
 
-    function addTokenPair(address token0, address token1) external onlyOwner {
+    function addTokenPair(address token0, address token1) public override onlyOwner {
         // First, count the number of routers that meet the condition
         uint256 count = 0;
         for (uint256 i = 0; i < routers.length(); i++) {
@@ -269,11 +261,11 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         pairMapping[token0][token1] = tokenPair;
     }
 
-    function clearPairList() external onlyOwner {
+    function clearPairList() public override onlyOwner {
         delete pairList;
     }
 
-    function withdrawTokens(address token) external onlyOwner {
+    function withdrawTokens(address token) public override onlyOwner {
         IERC20(token).transfer(msg.sender, IERC20(token).balanceOf(address(this)));
     }
 }
