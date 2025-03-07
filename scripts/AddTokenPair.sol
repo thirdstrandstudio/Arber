@@ -19,7 +19,7 @@ contract AddTokenPair is Script {
 
 
         // Call addTokenPair to add a new token pair
-        arber.addTokenPair(0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619, 0xD6DF932A45C0f255f85145f286eA0b292B21C90B);
+        arber.addTokenPair(0xc2132D05D31c914a87C6611C10748AEb04B58e8F, 0xD6DF932A45C0f255f85145f286eA0b292B21C90B);
 
 
 

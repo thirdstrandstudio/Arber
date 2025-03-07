@@ -22,7 +22,7 @@ interface IArberUpgradeable {
 
     function getWethPaths(address token, address token1) external view returns (WethPath[] memory);
 
-    function getWethPriceInToken0(address token0, address token1) external view returns (uint256);
+    function getWethPriceInToken0(address token0, address token1, uint256 gasAmount) external view returns (uint256);
 
     function executeArbitrage(
         address token0,

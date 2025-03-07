@@ -88,7 +88,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         return wethPaths;
     }
 
-    function getWethPriceInToken0(address token0, address token1) public view override returns (uint256) {
+    function getWethPriceInToken0(address token0, address token1, uint256 gasAmount) public view override returns (uint256) {
         TokenPair memory pair = pairMapping[token0][token1];
         require(pair.wethPaths.length > 0, "Need more than one weth path");
 
@@ -96,9 +96,9 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
 
         bool isToken0 = firstPath.paths[0] == token0;
         if (isToken0) {
-            return getAmountsOut(firstPath.router, firstPath.paths[1], firstPath.paths[0], 1 ether);
+            return getAmountsOut(firstPath.router, firstPath.paths[1], firstPath.paths[0], gasAmount);
         }
-        uint256 priceInToken1 = getAmountsOut(firstPath.router, firstPath.paths[1], firstPath.paths[0], 1 ether);
+        uint256 priceInToken1 = getAmountsOut(firstPath.router, firstPath.paths[1], firstPath.paths[0], gasAmount);
         return getAmountsOut(firstPath.router, token1, token0, priceInToken1);
     }
 
@@ -145,7 +145,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         uint256 maxWorstPrice = worstPrice + ((worstPrice * slippageTolerance) / 10000);
 
         uint256 profit = minBestPrice > maxWorstPrice ? minBestPrice - maxWorstPrice : 0;
-        if (profit <= (gasUsed * getWethPriceInToken0(token0, token1))) {
+        if (profit <= getWethPriceInToken0(token0, token1, gasUsed)) {
             return false;
         }
 
@@ -160,7 +160,12 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
             return true;
         }
 
-        IERC20(token0).transferFrom(_msgSender(), address(this), amountIn);
+        if(IERC20(token0).balanceOf(address(this)) < amountIn) {
+            emit RouterError(worstRouter, "Not enough balance");
+            return false;
+        }
+
+        //IERC20(token0).transferFrom(_msgSender(), address(this), amountIn);
         IERC20(token0).approve(worstRouter, amountIn);
 
         address[] memory path = new address[](2);
@@ -245,6 +250,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         }
 
         require(count > 0, "No routers have pair");
+        require(pairMapping[token0][token1].wethPaths.length == 0, "Pair already exists");
 
         // Create a memory array with the exact size needed
         address[] memory routerList = new address[](count);
