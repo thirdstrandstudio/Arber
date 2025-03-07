@@ -1,0 +1,50 @@
+{
+  "transactions": [
+    {
+      "hash": "0x5f6771bdb2e105ca5838acd78f1b8801f9714bdbe7910ef55d7888a562178d7a",
+      "transactionType": "CALL",
+      "contractName": null,
+      "contractAddress": "0x8dc20ce305ff565f7c6ff8e8d277b86174515c47",
+      "function": "addTokenPair(address,address)",
+      "arguments": [
+        "0x55d398326f99059fF775485246999027B3197955",
+        "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+      ],
+      "transaction": {
+        "from": "0x71f74debb7fd42e61de32256537284e06de8812d",
+        "to": "0x8dc20ce305ff565f7c6ff8e8d277b86174515c47",
+        "gas": "0x1c06f2",
+        "value": "0x0",
+        "input": "0xa7c87ec200000000000000000000000055d398326f99059ff775485246999027b3197955000000000000000000000000bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        "nonce": "0x2ad",
+        "chainId": "0x38"
+      },
+      "additionalContracts": [],
+      "isFixedGasLimit": false
+    }
+  ],
+  "receipts": [
+    {
+      "status": "0x1",
+      "cumulativeGasUsed": "0xae8188",
+      "logs": [],
+      "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "type": "0x0",
+      "transactionHash": "0x5f6771bdb2e105ca5838acd78f1b8801f9714bdbe7910ef55d7888a562178d7a",
+      "transactionIndex": "0x80",
+      "blockHash": "0xfacbbb3c2e395a9c05d6e1b39c1c5858093a38a87f625ab539c1c2ac2bb7ebd9",
+      "blockNumber": "0x2d12e8f",
+      "gasUsed": "0x1329f3",
+      "effectiveGasPrice": "0x3b9aca00",
+      "from": "0x71f74debb7fd42e61de32256537284e06de8812d",
+      "to": "0x8dc20ce305ff565f7c6ff8e8d277b86174515c47",
+      "contractAddress": null
+    }
+  ],
+  "libraries": [],
+  "pending": [],
+  "returns": {},
+  "timestamp": 1741371732,
+  "chain": 56,
+  "commit": "b9bfebf"
+}

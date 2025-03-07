@@ -9,8 +9,11 @@ iterate-pair-list:
 add-token-pair:
 	forge script "scripts/AddTokenPair.sol:AddTokenPair" --broadcast --verify -vvvv --rpc-url "$(RPC_URL)"
 
-deploy-arber:
+deploy:
 	forge script "scripts/DeployArberUpgradeable.sol:DeployArberUpgradeable" --broadcast --verify -vvvv --rpc-url "$(RPC_URL)"
 
 get-pairs:
 	forge script "scripts/GetPairsScript.sol:GetPairsScript" --broadcast --verify -vvvv --rpc-url "$(RPC_URL)"
+
+remove-router:
+	forge script "scripts/RemoveRouter.sol:RemoveRouter" --broadcast --verify -vvvv --rpc-url "$(RPC_URL)"

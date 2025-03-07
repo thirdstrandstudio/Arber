@@ -34,11 +34,10 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         uint256 count = 0;
         for (uint256 i = 0; i < routers.length(); i++) {
             address router = routers.at(i);
-            try IUniswapV2Router02(router).getAmountsOut(1 ether, path) returns (uint256[] memory amounts) {
-                if (amounts[1] > 0) {
-                    count++;
-                }
-            } catch {}
+            uint256 amount = getAmountsOut(router, path[0], path[1], 1 ether);
+            if (amount > 0) {
+                count++;
+            }
         }
 
         // Allocate memory array
@@ -47,12 +46,11 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         uint256 index = 0;
         for (uint256 i = 0; i < routers.length(); i++) {
             address router = routers.at(i);
-            try IUniswapV2Router02(router).getAmountsOut(1 ether, path) returns (uint256[] memory amounts) {
-                if (amounts[1] > 0) {
-                    wethPaths[index] = WethPath(path, router);
-                    index++;
-                }
-            } catch {}
+            uint256 amount = getAmountsOut(router, path[0], path[1], 1 ether);
+            if (amount > 0) {
+                wethPaths[index] = WethPath(path, router);
+                index++;
+            }
         }
 
         if (wethPaths.length > 0) {
@@ -65,11 +63,10 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
 
         for (uint256 i = 0; i < routers.length(); i++) {
             address router = routers.at(i);
-            try IUniswapV2Router02(router).getAmountsOut(1 ether, path) returns (uint256[] memory amounts) {
-                if (amounts[1] > 0) {
-                    count++;
-                }
-            } catch {}
+            uint256 amount = getAmountsOut(router, path[0], path[1], 1 ether);
+            if (amount > 0) {
+                count++;
+            }
         }
 
         wethPaths = new WethPath[](count);
@@ -77,14 +74,12 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
 
         for (uint256 i = 0; i < routers.length(); i++) {
             address router = routers.at(i);
-            try IUniswapV2Router02(router).getAmountsOut(1 ether, path) returns (uint256[] memory amounts) {
-                if (amounts[1] > 0) {
-                    wethPaths[index] = WethPath(path, router);
-                    index++;
-                }
-            } catch {}
+            uint256 amount = getAmountsOut(router, path[0], path[1], 1 ether);
+            if (amount > 0) {
+                wethPaths[index] = WethPath(path, router);
+                index++;
+            }
         }
-
         return wethPaths;
     }
 
@@ -94,16 +89,22 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         override
         returns (uint256)
     {
+        if(gasAmount == 0) {
+            return 0;
+        }
         TokenPair memory pair = pairMapping[token0][token1];
         require(pair.wethPaths.length > 0, "Need more than one weth path");
 
         WethPath memory firstPath = pair.wethPaths[0];
 
-        bool isToken0 = firstPath.paths[0] == token0;
+        bool isToken0 = firstPath.paths[1] == token0;
         if (isToken0) {
-            return getAmountsOut(firstPath.router, firstPath.paths[1], firstPath.paths[0], gasAmount);
+            return getAmountsOut(firstPath.router, firstPath.paths[0], firstPath.paths[1], gasAmount);
         }
-        uint256 priceInToken1 = getAmountsOut(firstPath.router, firstPath.paths[1], firstPath.paths[0], gasAmount);
+        uint256 priceInToken1 = getAmountsOut(firstPath.router, firstPath.paths[0], firstPath.paths[1], gasAmount);
+        if(priceInToken1 == 0) {
+            return 0;
+        }
         return getAmountsOut(firstPath.router, token1, token0, priceInToken1);
     }
 
@@ -162,7 +163,8 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         if (gasUsed == 0) {
             gasUsed = gasleft();
         }
-        MakeProfitContext memory makeProfitContext = willMakeProfit(token0, token1, amountIn, slippageTolerance, gasUsed);
+        MakeProfitContext memory makeProfitContext =
+            willMakeProfit(token0, token1, amountIn, slippageTolerance, gasUsed);
 
         if (!makeProfitContext.willMakeProfit) {
             return false;
@@ -296,8 +298,11 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         address[] memory path = new address[](2);
         path[0] = tokenIn;
         path[1] = tokenOut;
-        uint256[] memory amounts = IUniswapV2Router02(router).getAmountsOut(amountIn, path);
-        return amounts[1];
+        try IUniswapV2Router02(router).getAmountsOut(amountIn, path) returns (uint256[] memory amounts) {
+            return amounts[1];
+        } catch {
+            return 0;
+        }
     }
 
     function addRouter(address router) public override onlyOwner {

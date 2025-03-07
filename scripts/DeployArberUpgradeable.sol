@@ -12,13 +12,11 @@ contract DeployArberUpgradeable is Script {
         address wethAddress = vm.envAddress("WETH");
         vm.startBroadcast(deployerPrivateKey);
 
-        address[] memory routers = new address[](6);
+        address[] memory routers = new address[](4);
         routers[0] = address(0x10ED43C718714eb63d5aA57B78B54704E256024E); // Pancake swap v2 router
-        routers[1] = address(0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24); // Uniswap v2 router
+        routers[1] = address(0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24); // Uniswap v2 router
         routers[2] = address(0xcF0feBd3f17CEf5b47b0cD257aCf6025c5BFf3b7); // Apwswap v2 router
-        routers[3] = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D); // Jup v2 router
-        routers[4] = address(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap v2 router
-        routers[5] = address(0x10ed43c718714eb63d5aa57b78b54704e256024e); // Pinkswap
+        routers[3] = address(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap v2 router
 
         // Deploy the implementation
         ArberUpgradeable arberImpl = new ArberUpgradeable();
