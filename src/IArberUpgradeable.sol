@@ -8,6 +8,22 @@ interface IArberUpgradeable {
 
     event RouterError(address indexed router, string message);
 
+    struct ArbitrageContext {
+        uint256 bestPriceToBuyAsset;
+        uint256 bestPriceToSellAsset;
+        address buyRouter;
+        address sellRouter;
+    }
+
+    struct MakeProfitContext {
+        bool willMakeProfit;
+        address buyRouter;
+        address sellRouter;
+        uint256 buyAmount;
+        uint256 sellAmount;
+        uint256 profit;
+    }
+
     struct WethPath {
         address[] paths;
         address router;
@@ -60,4 +76,9 @@ interface IArberUpgradeable {
     function withdrawTokens(address token) external;
     
     function setWeth(address weth) external;
+
+    function getArbitrageContext(address token0, address token1, uint256 amountIn)
+        external
+        view
+        returns (ArbitrageContext memory);
 }

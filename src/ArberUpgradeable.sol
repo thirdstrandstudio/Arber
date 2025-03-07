@@ -109,18 +109,12 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
-    //Slippage tolerance 50 = 0.5%
-    function executeArbitrage(
-        address token0,
-        address token1,
-        uint256 amountIn,
-        uint256 slippageTolerance,
-        uint256 gasUsed,
-        bool dryRun
-    ) public override onlyOwner returns (bool) {
-        if (gasUsed == 0) {
-            gasUsed = gasleft();
-        }
+    function getArbitrageContext(address token0, address token1, uint256 amountIn)
+        public
+        view
+        override
+        returns (ArbitrageContext memory)
+    {
         uint256 bestPriceToBuyAsset;
         uint256 bestPriceToSellAsset;
         address buyRouter;
@@ -136,7 +130,6 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
             } catch {
                 bestPriceToBuyAsset = 0;
                 buyRouter = address(0);
-                emit RouterError(tokenPair.routers[i], "Failed to fetch price");
             }
 
             if (buyRouter != address(0)) {
@@ -150,23 +143,36 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
                 } catch {
                     bestPriceToSellAsset = 0;
                     sellRouter = address(0);
-                    emit RouterError(tokenPair.routers[i], "Failed to fetch price");
                 }
             }
         }
 
-        if (sellRouter == address(0) || buyRouter == address(0)) {
+        return ArbitrageContext(bestPriceToBuyAsset, bestPriceToSellAsset, buyRouter, sellRouter);
+    }
+
+    //Slippage tolerance 50 = 0.5%
+    function executeArbitrage(
+        address token0,
+        address token1,
+        uint256 amountIn,
+        uint256 slippageTolerance,
+        uint256 gasUsed,
+        bool dryRun
+    ) public override onlyOwner returns (bool) {
+        if (gasUsed == 0) {
+            gasUsed = gasleft();
+        }
+        MakeProfitContext memory makeProfitContext = willMakeProfit(token0, token1, amountIn, slippageTolerance, gasUsed);
+
+        if (!makeProfitContext.willMakeProfit) {
             return false;
         }
 
-        uint256 buyAmount = bestPriceToBuyAsset - ((bestPriceToBuyAsset * slippageTolerance) / 10000);
-        uint256 sellAmount = bestPriceToSellAsset - ((bestPriceToSellAsset * slippageTolerance) / 10000);
-
-        uint256 profit = sellAmount > amountIn ? sellAmount - amountIn : 0;
-        uint256 wPrice = getWethPriceInToken0(token0, token1, gasUsed);
-        if (profit <= wPrice) {
-            return false;
-        }
+        uint256 buyAmount = makeProfitContext.buyAmount;
+        uint256 sellAmount = makeProfitContext.sellAmount;
+        uint256 profit = makeProfitContext.profit;
+        address buyRouter = makeProfitContext.buyRouter;
+        address sellRouter = makeProfitContext.sellRouter;
 
         uint256[4] memory data;
         data[0] = amountIn;
@@ -207,6 +213,57 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         );
 
         return true;
+    }
+
+    function willMakeProfit(
+        address token0,
+        address token1,
+        uint256 amountIn,
+        uint256 slippageTolerance,
+        uint256 gasUsed
+    ) internal view returns (MakeProfitContext memory) {
+        ArbitrageContext memory context = this.getArbitrageContext(token0, token1, amountIn);
+        uint256 bestPriceToBuyAsset = context.bestPriceToBuyAsset;
+        uint256 bestPriceToSellAsset = context.bestPriceToSellAsset;
+        address buyRouter = context.buyRouter;
+        address sellRouter = context.sellRouter;
+
+        if (sellRouter == address(0) || buyRouter == address(0)) {
+            return MakeProfitContext(false, buyRouter, sellRouter, 0, 0, 0);
+        }
+
+        uint256 buyAmount = bestPriceToBuyAsset - ((bestPriceToBuyAsset * slippageTolerance) / 10000);
+        uint256 sellAmount = bestPriceToSellAsset - ((bestPriceToSellAsset * slippageTolerance) / 10000);
+
+        uint256 profit = sellAmount > amountIn ? sellAmount - amountIn : 0;
+        uint256 wPrice = getWethPriceInToken0(token0, token1, gasUsed);
+        if (profit <= wPrice) {
+            return MakeProfitContext(false, buyRouter, sellRouter, buyAmount, sellAmount, profit);
+        }
+        return MakeProfitContext(true, buyRouter, sellRouter, buyAmount, sellAmount, profit);
+    }
+
+    function shouldIteratePairList(
+        uint256 start,
+        uint256 n,
+        uint256 amountIn,
+        uint256 slippageTolerance,
+        uint256 gasUsed
+    ) public view returns (bool) {
+        uint256 gasStart = gasUsed;
+        uint256 gasDividedPerTx = gasStart / n;
+        uint256 len = pairList.length;
+
+        for (uint256 i = 0; i < n; i++) {
+            uint256 index = (start + i) % len;
+            MakeProfitContext memory makeProfitContext = willMakeProfit(
+                pairList[index].token0, pairList[index].token1, amountIn, slippageTolerance, gasDividedPerTx
+            );
+            if (makeProfitContext.willMakeProfit) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function iteratePairList(
