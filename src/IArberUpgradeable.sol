@@ -8,6 +8,14 @@ interface IArberUpgradeable {
 
     event RouterError(address indexed router, string message);
 
+    struct IteratePairListInput {
+        bool shouldIterate;
+        uint256 start;
+        uint256 amountIn;
+        uint256 slippageTolerance;
+        uint256 gasUsed;
+    }
+
     struct ArbitrageContext {
         uint256 bestPriceToBuyAsset;
         uint256 bestPriceToSellAsset;

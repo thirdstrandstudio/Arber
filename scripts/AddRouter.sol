@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 import "forge-std/Script.sol";
 import "../src/ArberUpgradeable.sol"; // adjust the import path as needed
 
-contract AddTokenPair is Script {
+contract AddRouter is Script {
     function run() external {
         // Load private key and addresses from environment variables
         uint256 pk = vm.envUint("PRIVATE_KEY");
@@ -17,14 +17,10 @@ contract AddTokenPair is Script {
 
         vm.startBroadcast(pk);
 
-
-        // Call addTokenPair to add a new token pair
-        address busd = 0x55d398326f99059fF775485246999027B3197955;
-
-        //arber.addTokenPair(busd, 0x7083609fCE4d1d8Dc0C979AAb8c869Ea2C873402); //btcb
+        arber.addRouter(); //btcb
         //arber.addTokenPair(busd, 0x2170Ed0880ac9A755fd29B2688956BD959F933F8); //eth
         //arber.addTokenPair(busd, 0x3EE2200Efb3400fAbB9AacF31297cBdD1d435D47); //eth
-        //arber.addTokenPair(0x55d398326f99059fF775485246999027B3197955, 0x87266413e5b64DB72f11bB6795Ee976545DBAf43); //wbnb
+        arber.addRouter(0x55d398326f99059fF775485246999027B3197955); //wbnb
 
         vm.stopBroadcast();
     }

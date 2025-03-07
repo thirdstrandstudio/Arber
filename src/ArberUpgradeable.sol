@@ -253,7 +253,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         uint256 amountIn,
         uint256 slippageTolerance,
         uint256 gasUsed
-    ) public view returns (bool) {
+    ) public view returns (IteratePairListInput memory) {
         uint256 gasStart = gasUsed;
         uint256 gasDividedPerTx = gasStart / n;
         uint256 len = pairList.length;
@@ -264,10 +264,10 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
                 pairList[index].token0, pairList[index].token1, amountIn, slippageTolerance, gasDividedPerTx
             );
             if (makeProfitContext.willMakeProfit) {
-                return true;
+                return IteratePairListInput(true, index, amountIn, slippageTolerance, gasDividedPerTx);
             }
         }
-        return false;
+        return IteratePairListInput(false, start, amountIn, slippageTolerance, gasDividedPerTx);
     }
 
     function iteratePairList(

@@ -3,6 +3,7 @@ pragma solidity ^0.8.10;
 
 import "forge-std/Script.sol";
 import "../src/ArberUpgradeable.sol"; // adjust the import path as needed
+import {IArberUpgradeable} from "../src/IArberUpgradeable.sol";
 
 contract IteratePairList is Script {
     function run() external {
@@ -15,9 +16,9 @@ contract IteratePairList is Script {
         
         
         vm.startBroadcast(pk);
-
-        if(arber.shouldIteratePairList(0, 8, 1000000000 gwei, 0, 100)) {
-            arber.iteratePairList(0, 8, 1000000000 gwei, 0, 100, false);
+        IArberUpgradeable.IteratePairListInput memory iteratePairListInput = arber.shouldIteratePairList(0, 11, 1000000 gwei, 0, 100);
+        if(iteratePairListInput.shouldIterate) {
+            arber.iteratePairList(iteratePairListInput.start, 1, iteratePairListInput.amountIn, iteratePairListInput.slippageTolerance, iteratePairListInput.gasUsed, false);
         }
         vm.stopBroadcast();
     }
