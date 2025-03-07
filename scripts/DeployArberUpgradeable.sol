@@ -4,16 +4,17 @@ pragma solidity ^0.8.10;
 
 import "forge-std/Script.sol";
 import {ArberUpgradeable} from "../src/ArberUpgradeable.sol";
-import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {ERC1967Proxy} from "@openzeppelin-contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployArberUpgradeable is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address wethAddress = vm.envAddress("WETH");
         vm.startBroadcast(deployerPrivateKey);
 
         address[] memory routers = new address[](2);
-        routers[0] = address("0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"); // Replace with actual router addresses
-        routers[1] = address("0xedf6066a2b290C185783862C7F4776A2C8077AD1"); // Replace with actual router addresses
+        routers[0] = address(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff); // Replace with actual router addresses
+        routers[1] = address(0xedf6066a2b290C185783862C7F4776A2C8077AD1); // Replace with actual router addresses
 
         // Deploy the implementation
         ArberUpgradeable arberImpl = new ArberUpgradeable();
@@ -21,7 +22,8 @@ contract DeployArberUpgradeable is Script {
         // Encode initializer data
         bytes memory initData = abi.encodeWithSelector(
             ArberUpgradeable.initialize.selector,
-            routers
+            routers,
+            wethAddress
         );
 
         // Deploy proxy and initialize

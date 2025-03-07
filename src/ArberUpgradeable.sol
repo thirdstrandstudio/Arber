@@ -17,12 +17,13 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
     mapping(address => mapping(address => TokenPair)) private pairMapping;
     TokenPair[] public pairList;
 
-    function initialize(address[] memory _routers) public initializer {
+    function initialize(address[] memory _routers, address _weth) public initializer {
         __Ownable_init(_msgSender());
         __UUPSUpgradeable_init();
         for (uint256 i = 0; i < _routers.length; i++) {
             routers.add(_routers[i]);
         }
+        weth = _weth;
     }
 
     function getWethPaths(address token, address token1) public view override returns (WethPath[] memory) {
@@ -218,6 +219,10 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
 
     function addRouter(address router) public override onlyOwner {
         routers.add(router);
+    }
+
+    function setWeth(address _weth) public override onlyOwner {
+        weth = _weth;
     }
 
     function removeRouter(address router) public override onlyOwner {

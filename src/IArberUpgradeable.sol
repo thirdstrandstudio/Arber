@@ -58,4 +58,6 @@ interface IArberUpgradeable {
     function clearPairList() external;
 
     function withdrawTokens(address token) external;
+    
+    function setWeth(address weth) external;
 }
