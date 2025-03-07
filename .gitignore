@@ -3,3 +3,4 @@ out/
 foundry-out/
 bin/
 node_modules/
+.env*
