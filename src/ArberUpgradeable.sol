@@ -419,7 +419,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
             }
         }
 
-        require(count > 0, "No routers have pair");
+        require(count > 1, "Need more than one router to add pair");
         require(pairMapping[token0][token1].wethPaths.length == 0, "Pair already exists");
 
         // Create a memory array with the exact size needed
