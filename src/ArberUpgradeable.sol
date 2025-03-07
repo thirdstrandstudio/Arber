@@ -7,8 +7,6 @@ import "@openzeppelin-contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin-contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import "./IArberUpgradeable.sol";
 
 contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable, IArberUpgradeable {
@@ -16,16 +14,6 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
 
     EnumerableSet.AddressSet private routers;
     address public weth;
-
-    // --- New state variables for V3 support ---
-    // Mapping to indicate if a router is V3
-    mapping(address => bool) public isV3Router;
-    // For V3 routers, store the fee (e.g. 3000 for 0.3%)
-    mapping(address => uint24) public v3Fee;
-    // Uniswap V3 quoter contract address (set once by owner)
-    mapping(address => address) public v3Quoter;
-    // -------------------------------------------
-
     mapping(address => mapping(address => TokenPair)) private pairMapping;
     TokenPair[] public pairList;
 
@@ -37,26 +25,6 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         }
         weth = _weth;
     }
-
-    // --- V3 Helper Functions ---
-
-    /// @notice Set the Uniswap V3 quoter contract address.
-    function setV3Quoter(address router, address _quoter) public onlyOwner {
-        v3Quoter[router] = _quoter;
-    }
-
-    /// @notice Add a router that is based on Uniswap V3.
-    /// @param router The router address.
-    /// @param fee The pool fee for swaps (e.g. 3000 for 0.3%).
-    /// @param _quoter The Uniswap V3 quoter contract address.
-    function addRouterV3(address router, uint24 fee, address _quoter) public onlyOwner {
-        routers.add(router);
-        isV3Router[router] = true;
-        v3Fee[router] = fee;
-        v3Quoter[router] = _quoter;
-    }
-
-    // ---------------------------
 
     function getWethPaths(address token, address token1) public view override returns (WethPath[] memory) {
         address[] memory path = new address[](2);
@@ -185,7 +153,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         return ArbitrageContext(bestPriceToBuyAsset, bestPriceToSellAsset, buyRouter, sellRouter);
     }
 
-    // Slippage tolerance 50 = 0.5%
+    //Slippage tolerance 50 = 0.5%
     function executeArbitrage(
         address token0,
         address token1,
@@ -226,63 +194,27 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
             return false;
         }
 
-        // Approve token0 for buy swap
+        //IERC20(token0).transferFrom(_msgSender(), address(this), amountIn);
         IERC20(token0).approve(buyRouter, amountIn);
 
-        uint256[] memory amountsReceived;
+        address[] memory path = new address[](2);
+        path[0] = token0;
+        path[1] = token1;
 
-        // --- Buy Swap: V3 vs V2 ---
-        if (isV3Router[buyRouter]) {
-            // For Uniswap V3, build the ExactInputSingle params.
-            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
-                tokenIn: token0,
-                tokenOut: token1,
-                fee: v3Fee[buyRouter],
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: amountIn,
-                amountOutMinimum: buyAmount,
-                sqrtPriceLimitX96: 0
-            });
-            uint256 amountOut = ISwapRouter(buyRouter).exactInputSingle(params);
-            // Mimic V2 return structure for consistency.
-            amountsReceived = new uint256[](2);
-            amountsReceived[0] = amountIn;
-            amountsReceived[1] = amountOut;
-        } else {
-            // For Uniswap V2, use the original swap function.
-            address[] memory path = new address[](2);
-            path[0] = token0;
-            path[1] = token1;
-            amountsReceived = IUniswapV2Router02(buyRouter).swapExactTokensForTokens(
-                amountIn, buyAmount, path, address(this), block.timestamp
-            );
-        }
+        uint256[] memory amountsReceived = IUniswapV2Router02(buyRouter).swapExactTokensForTokens(
+            amountIn, buyAmount, path, address(this), block.timestamp
+        );
 
-        // Approve token1 for sell swap
+        // After first swap, compute expected return for the reverse swap:
         IERC20(token1).approve(sellRouter, amountsReceived[1]);
 
-        // --- Sell Swap: V3 vs V2 ---
-        if (isV3Router[sellRouter]) {
-            ISwapRouter.ExactInputSingleParams memory sellParams = ISwapRouter.ExactInputSingleParams({
-                tokenIn: token1,
-                tokenOut: token0,
-                fee: v3Fee[sellRouter],
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: amountsReceived[1],
-                amountOutMinimum: sellAmount,
-                sqrtPriceLimitX96: 0
-            });
-            ISwapRouter(sellRouter).exactInputSingle(sellParams);
-        } else {
-            address[] memory reversePath = new address[](2);
-            reversePath[0] = token1;
-            reversePath[1] = token0;
-            IUniswapV2Router02(sellRouter).swapExactTokensForTokens(
-                amountsReceived[1], sellAmount, reversePath, address(this), block.timestamp
-            );
-        }
+        address[] memory reversePath = new address[](2);
+        reversePath[0] = token1;
+        reversePath[1] = token0;
+
+        IUniswapV2Router02(sellRouter).swapExactTokensForTokens(
+            amountsReceived[1], sellAmount, reversePath, address(this), block.timestamp
+        );
 
         return true;
     }
@@ -359,39 +291,24 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         }
     }
 
-    /// @notice Unified function to get quote for a swap.
-    /// For V2 routers it calls `getAmountsOut`; for V3 it uses the quoter.
     function getAmountsOut(address router, address tokenIn, address tokenOut, uint256 amountIn)
         public
         view
         override
         returns (uint256)
     {
-        if (isV3Router[router]) {
-            require(v3Quoter[router] != address(0), "V3 quoter not set");
-            try IQuoter(v3Quoter[router]).quoteExactInputSingle(tokenIn, tokenOut, v3Fee[router], amountIn, 0) returns (uint256 amount) {
-                return amount;
-            } catch {
-                return 0;
-            }
-        } else {
-            address[] memory path = new address[](2);
-            path[0] = tokenIn;
-            path[1] = tokenOut;
-            try IUniswapV2Router02(router).getAmountsOut(amountIn, path) returns (uint256[] memory amounts) {
-                return amounts[1];
-            } catch {
-                return 0;
-            }
+        address[] memory path = new address[](2);
+        path[0] = tokenIn;
+        path[1] = tokenOut;
+        try IUniswapV2Router02(router).getAmountsOut(amountIn, path) returns (uint256[] memory amounts) {
+            return amounts[1];
+        } catch {
+            return 0;
         }
     }
 
     function addRouter(address router) public override onlyOwner {
         routers.add(router);
-        // If not added as V3, it's assumed to be V2.
-        if (!isV3Router[router]) {
-            isV3Router[router] = false;
-        }
     }
 
     function setWeth(address _weth) public override onlyOwner {
@@ -400,8 +317,6 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
 
     function removeRouter(address router) public override onlyOwner {
         routers.remove(router);
-        delete isV3Router[router];
-        delete v3Fee[router];
     }
 
     function getRouters() public view override returns (address[] memory) {
