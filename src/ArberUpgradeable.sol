@@ -15,6 +15,11 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         address indexed token0, address indexed token1, address bestRouter, address worstRouter, uint256[4] data
     ); //data = uint256 amountIn, uint256 bestPrice, uint256 worstPrice, uint256 profit
 
+    event RouterError(
+        address indexed router,
+        string message
+    );
+
     EnumerableSet.AddressSet private routers;
     address public weth;
     mapping(address => mapping(address => TokenPair)) private pairMapping;
@@ -217,10 +222,6 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable 
         path[1] = tokenOut;
         uint256[] memory amounts = IUniswapV2Router02(router).getAmountsOut(amountIn, path);
         return amounts[1];
-    }
-
-    function setSlippageTolerance(uint256 _slippageTolerance) external onlyOwner {
-        slippageTolerance = _slippageTolerance;
     }
 
     function addRouter(address router) external onlyOwner {
