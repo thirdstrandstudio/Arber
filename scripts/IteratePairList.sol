@@ -14,7 +14,7 @@ contract IteratePairList is Script {
         ArberUpgradeable arber = ArberUpgradeable(arberAddress);
 
         vm.startBroadcast(pk);
-        arber.iteratePairList(0, 4, 1 * (10 * 5), 50, 1000, false);
+        arber.iteratePairList(0, 3, 1 * (10 * 6), 5, 1000, false);
         vm.stopBroadcast();
     }
 }

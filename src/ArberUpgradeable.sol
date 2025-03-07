@@ -88,7 +88,12 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         return wethPaths;
     }
 
-    function getWethPriceInToken0(address token0, address token1, uint256 gasAmount) public view override returns (uint256) {
+    function getWethPriceInToken0(address token0, address token1, uint256 gasAmount)
+        public
+        view
+        override
+        returns (uint256)
+    {
         TokenPair memory pair = pairMapping[token0][token1];
         require(pair.wethPaths.length > 0, "Need more than one weth path");
 
@@ -116,73 +121,89 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         if (gasUsed == 0) {
             gasUsed = gasleft();
         }
-        uint256 bestPrice;
-        uint256 worstPrice = type(uint256).max;
-        address bestRouter;
-        address worstRouter;
+        uint256 bestPriceToBuyAsset;
+        uint256 bestPriceToSellAsset;
+        address buyRouter;
+        address sellRouter;
         TokenPair memory tokenPair = pairMapping[token0][token1];
 
         for (uint256 i = 0; i < tokenPair.routers.length; i++) {
             try this.getAmountsOut(tokenPair.routers[i], token0, token1, amountIn) returns (uint256 amountOut) {
-                if (amountOut > bestPrice) {
-                    bestPrice = amountOut;
-                    bestRouter = tokenPair.routers[i];
-                }
-                if (amountOut < worstPrice) {
-                    worstPrice = amountOut;
-                    worstRouter = tokenPair.routers[i];
+                if (amountOut > bestPriceToBuyAsset) {
+                    bestPriceToBuyAsset = amountOut;
+                    buyRouter = tokenPair.routers[i];
                 }
             } catch {
+                bestPriceToBuyAsset = 0;
+                buyRouter = address(0);
                 emit RouterError(tokenPair.routers[i], "Failed to fetch price");
+            }
+
+            if (buyRouter != address(0)) {
+                try this.getAmountsOut(tokenPair.routers[i], token1, token0, bestPriceToBuyAsset) returns (
+                    uint256 amountOut
+                ) {
+                    if (amountOut > bestPriceToSellAsset) {
+                        bestPriceToSellAsset = amountOut;
+                        sellRouter = tokenPair.routers[i];
+                    }
+                } catch {
+                    bestPriceToSellAsset = 0;
+                    sellRouter = address(0);
+                    emit RouterError(tokenPair.routers[i], "Failed to fetch price");
+                }
             }
         }
 
-        if (bestRouter == address(0) || worstRouter == address(0)) {
+        if (sellRouter == address(0) || buyRouter == address(0)) {
             return false;
         }
 
-        uint256 minBestPrice = bestPrice - ((bestPrice * slippageTolerance) / 10000);
-        uint256 maxWorstPrice = worstPrice + ((worstPrice * slippageTolerance) / 10000);
+        uint256 buyAmount = bestPriceToBuyAsset - ((bestPriceToBuyAsset * slippageTolerance) / 10000);
+        uint256 sellAmount = bestPriceToSellAsset - ((bestPriceToSellAsset * slippageTolerance) / 10000);
 
-        uint256 profit = minBestPrice > maxWorstPrice ? minBestPrice - maxWorstPrice : 0;
-        if (profit <= getWethPriceInToken0(token0, token1, gasUsed)) {
+        uint256 profit = sellAmount > amountIn ? sellAmount - amountIn : 0;
+        uint256 wPrice = getWethPriceInToken0(token0, token1, gasUsed);
+        if (profit <= wPrice) {
             return false;
         }
 
         uint256[4] memory data;
         data[0] = amountIn;
-        data[1] = bestPrice;
-        data[2] = worstPrice;
+        data[1] = buyAmount;
+        data[2] = sellAmount;
         data[3] = profit;
-        emit ArbitrageOpportunity(token0, token1, bestRouter, worstRouter, data);
+        emit ArbitrageOpportunity(token0, token1, buyRouter, sellRouter, data);
 
         if (dryRun) {
             return true;
         }
 
-        if(IERC20(token0).balanceOf(address(this)) < amountIn) {
-            emit RouterError(worstRouter, "Not enough balance");
+        if (IERC20(token0).balanceOf(address(this)) < amountIn) {
+            emit RouterError(buyRouter, "Not enough balance");
             return false;
         }
 
         //IERC20(token0).transferFrom(_msgSender(), address(this), amountIn);
-        IERC20(token0).approve(worstRouter, amountIn);
+        IERC20(token0).approve(buyRouter, amountIn);
 
         address[] memory path = new address[](2);
         path[0] = token0;
         path[1] = token1;
 
-        uint256[] memory amountsReceived = IUniswapV2Router02(worstRouter).swapExactTokensForTokens(
-            amountIn, maxWorstPrice, path, address(this), block.timestamp
+        uint256[] memory amountsReceived = IUniswapV2Router02(buyRouter).swapExactTokensForTokens(
+            amountIn, buyAmount, path, address(this), block.timestamp
         );
 
-        IERC20(token1).approve(bestRouter, amountsReceived[1]);
+        // After first swap, compute expected return for the reverse swap:
+        IERC20(token1).approve(sellRouter, amountsReceived[1]);
 
-        path[0] = token1;
-        path[1] = token0;
+        address[] memory reversePath = new address[](2);
+        reversePath[0] = token1;
+        reversePath[1] = token0;
 
-        IUniswapV2Router02(bestRouter).swapExactTokensForTokens(
-            amountsReceived[1], minBestPrice, path, _msgSender(), block.timestamp
+        IUniswapV2Router02(sellRouter).swapExactTokensForTokens(
+            amountsReceived[1], sellAmount, reversePath, address(this), block.timestamp
         );
 
         return true;
