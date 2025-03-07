@@ -24,7 +24,7 @@ contract AddTokenPair is Script {
         //arber.addTokenPair(busd, 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c); //btcb
         //arber.addTokenPair(busd, 0x2170Ed0880ac9A755fd29B2688956BD959F933F8); //eth
         //arber.addTokenPair(busd, 0x3EE2200Efb3400fAbB9AacF31297cBdD1d435D47); //eth
-        //arber.addTokenPair(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56, 0x8d008B313C1d6C7fE2982F62d32Da7507cF43551); //wbnb
+        //arber.addTokenPair(0x55d398326f99059fF775485246999027B3197955, 0x87266413e5b64DB72f11bB6795Ee976545DBAf43); //wbnb
 
         vm.stopBroadcast();
     }
