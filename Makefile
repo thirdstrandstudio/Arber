@@ -1,4 +1,4 @@
-RPC_URL=https://fragrant-purple-sunset.matic.quiknode.pro/
+RPC_URL=https://young-still-wish.bsc.quiknode.pro/5ee0cd7020cfcc8c5d36b7fe2fbfb376518d8dff/
 
 update:
 	forge script "scripts/UpgradeArberScript.sol:UpgradeArberScript" --broadcast --verify -vvvv --rpc-url "$(RPC_URL)"
