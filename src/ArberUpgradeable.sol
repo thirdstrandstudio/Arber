@@ -89,7 +89,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         override
         returns (uint256)
     {
-        if(gasAmount == 0) {
+        if (gasAmount == 0) {
             return 0;
         }
         TokenPair memory pair = pairMapping[token0][token1];
@@ -102,7 +102,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
             return getAmountsOut(firstPath.router, firstPath.paths[0], firstPath.paths[1], gasAmount);
         }
         uint256 priceInToken1 = getAmountsOut(firstPath.router, firstPath.paths[0], firstPath.paths[1], gasAmount);
-        if(priceInToken1 == 0) {
+        if (priceInToken1 == 0) {
             return 0;
         }
         return getAmountsOut(firstPath.router, token1, token0, priceInToken1);
@@ -132,8 +132,10 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
                 bestPriceToBuyAsset = 0;
                 buyRouter = address(0);
             }
+        }
 
-            if (buyRouter != address(0)) {
+        if (buyRouter != address(0)) {
+            for (uint256 i = 0; i < tokenPair.routers.length; i++) {
                 try this.getAmountsOut(tokenPair.routers[i], token1, token0, bestPriceToBuyAsset) returns (
                     uint256 amountOut
                 ) {

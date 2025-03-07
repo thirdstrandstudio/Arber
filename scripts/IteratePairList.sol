@@ -16,8 +16,8 @@ contract IteratePairList is Script {
         
         vm.startBroadcast(pk);
 
-        if(arber.shouldIteratePairList(0, 4, 1 * (10 ^ 5), 5, 1000)) {
-            arber.iteratePairList(0, 4, 1 * (10 ^ 5), 5, 1000, false);
+        if(arber.shouldIteratePairList(0, 7, 1000000000 gwei, 0, 100)) {
+            arber.iteratePairList(0, 7, 1000000000 gwei, 0, 100, false);
         }
         vm.stopBroadcast();
     }
