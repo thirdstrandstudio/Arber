@@ -9,6 +9,10 @@ import "@openzeppelin-contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "./IArberUpgradeable.sol";
 
+/**
+ * @title ArberUpgradeable
+ * @notice Upgradeable arbitrage bot that monitors Uniswap pairs across multiple routers
+ */
 contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable, IArberUpgradeable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -17,7 +21,12 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
     mapping(address => mapping(address => TokenPair)) private pairMapping;
     TokenPair[] public pairList;
 
-    function initialize(address[] memory _routers, address _weth) public initializer {
+    /**
+ * @notice Initialize the contract with routers and WETH address
+ * @param _routers Array of Uniswap routers to monitor
+ * @param _weth Address of WETH token
+ */
+function initialize(address[] memory _routers, address _weth) public initializer {
         __Ownable_init(_msgSender());
         __UUPSUpgradeable_init();
         for (uint256 i = 0; i < _routers.length; i++) {
@@ -26,7 +35,13 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         weth = _weth;
     }
 
-    function getWethPaths(address token, address token1) public view override returns (WethPath[] memory) {
+    /**
+ * @notice Get WETH swap paths for a token pair
+ * @param token First token of the pair
+ * @param token1 Second token of the pair
+ * @return Array of WethPath structs representing swap paths
+ */
+function getWethPaths(address token, address token1) public view override returns (WethPath[] memory) {
         address[] memory path = new address[](2);
         path[0] = weth;
         path[1] = token;
@@ -154,7 +169,17 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
     }
 
     //Slippage tolerance 50 = 0.5%
-    function executeArbitrage(
+    /**
+ * @notice Execute an arbitrage between two tokens
+ * @param token0 Address of the starting token 
+ * @param token1 Address of the token to swap to
+ * @param amountIn Amount of token0 to start the trade with
+ * @param slippageTolerance Max slippage in basis points
+ * @param gasUsed Amount of gas to use for the trade
+ * @param dryRun Whether to simulate trade without swapping
+ * @return A boolean indicating if the arbitrage was successful
+ */
+function executeArbitrage(
         address token0,
         address token1,
         uint256 amountIn,
@@ -219,7 +244,16 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         return true;
     }
 
-    function willMakeProfit(
+    /**
+ * @dev Calculate if an arbitrage is profitable
+ * @param token0 Address of the starting token
+ * @param token1 Address of the token to swap to
+ * @param amountIn Amount of token0 to start the trade with
+ * @param slippageTolerance Max slippage in basis points
+ * @param gasUsed Amount of gas to use for the trade
+ * @return A MakeProfitContext struct with profitability info
+ */
+function willMakeProfit(
         address token0,
         address token1,
         uint256 amountIn,
@@ -291,7 +325,15 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         }
     }
 
-    function getAmountsOut(address router, address tokenIn, address tokenOut, uint256 amountIn)
+    /**
+ * @notice Get the tokenOut amount for a swap on a given router
+ * @param router Address of the Uniswap router
+ * @param tokenIn Address of the token to swap from
+ * @param tokenOut Address of the token to swap to 
+ * @param amountIn Amount of tokenIn to swap
+ * @return The amount of tokenOut received from the swap
+ */
+function getAmountsOut(address router, address tokenIn, address tokenOut, uint256 amountIn)
         public
         view
         override
@@ -324,7 +366,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
     }
 
     function addTokenPair(address token0, address token1) public override onlyOwner {
-        // First, count the number of routers that meet the condition
+        // Count the number of eligible routers for the token pair
         uint256 count = 0;
         for (uint256 i = 0; i < routers.length(); i++) {
             address routerAddress = routers.at(i);
@@ -337,7 +379,7 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         require(count > 1, "Need more than one router to add pair");
         require(pairMapping[token0][token1].wethPaths.length == 0, "Pair already exists");
 
-        // Create a memory array with the exact size needed
+        // Allocate memory array for eligible routers
         address[] memory routerList = new address[](count);
         uint256 index = 0;
         for (uint256 i = 0; i < routers.length(); i++) {
@@ -350,7 +392,8 @@ contract ArberUpgradeable is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         }
 
         WethPath[] memory wethPaths = getWethPaths(token0, token1);
-        require(wethPaths.length > 0, "No wethpaths found");
+        // Revert if no eligible swap paths found
+require(wethPaths.length > 0, "No wethpaths found");
 
         TokenPair memory tokenPair = TokenPair(token0, token1, routerList, wethPaths);
         pairList.push(tokenPair);
