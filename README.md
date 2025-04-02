@@ -62,7 +62,7 @@ The open-source version you're viewing provides basic arbitrage functionality. O
 - **Advanced Analytics Dashboard**: Real-time performance tracking and visualization
 - **Automated Trade Execution**: Fully automated system requiring minimal oversight
 
-![Arber Professional](https://img.shields.io/badge/Arber-Professional-orange?style=for-the-badge)
+[![Arber Professional](https://img.shields.io/badge/Arber-Professional-orange?style=for-the-badge)](https://thirdstrandstudio.com/products/arber)
 
 The professional version is available through [Third Strand Studio](https://thirdstrandstudio.com/products/arber) and includes setup support.
 
