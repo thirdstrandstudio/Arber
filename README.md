@@ -19,6 +19,64 @@ Arber is a sophisticated arbitrage system that identifies and executes profitabl
 - **View Function Profitability Check**: Uses `shouldIteratePairList` view function to check if trades will be profitable before execution
 - **Upgradeable Design**: Uses OpenZeppelin's UUPS pattern for contract upgrades
 
+## For Non-Technical Users
+
+### Getting Started
+
+1. **Deploy the Contract**: If you haven't already, work with a developer to deploy the Arber contract to the blockchain.
+
+2. **Fund Your Contract**: After deployment, you need to deposit funds to enable trading:
+   - Get the address of your deployed contract
+   - Transfer ERC20 tokens you want to use for arbitrage to this address
+   - For ETH networks, you'll need to wrap your ETH into WETH first, then transfer
+
+3. **Daily Operation**:
+   - Use a blockchain interface (like Etherscan) to interact with your contract
+   - Call the `shouldIteratePairList` function first to check for profitable opportunities
+   - If it returns `shouldIterate: true`, then call the `iteratePairList` function with the same parameters to execute trades
+
+### Checking for Profitable Trades
+
+1. Go to your contract on Etherscan or another blockchain explorer
+2. Connect your wallet (must be the contract owner)
+3. Find the "Read Contract" section
+4. Call `shouldIteratePairList` with these parameters:
+   - `start`: 0 (start from the beginning of your pair list)
+   - `n`: Number of pairs to check (e.g., 10)
+   - `amountIn`: Amount of input token to use (in wei)
+   - `slippageTolerance`: Your acceptable slippage (e.g., 50 = 0.5%)
+   - `gasUsed`: Estimated gas for transaction (e.g., 200000)
+
+5. Check the result:
+   - If `shouldIterate` is `true`, proceed to execute the trade
+   - Note the other returned values as you'll need them for the next step
+
+### Executing Profitable Trades
+
+1. If the previous step showed profitable opportunities, go to "Write Contract" section
+2. Call `iteratePairList` with:
+   - `start`: Use the value returned from `shouldIteratePairList`
+   - `n`: 1 (to execute just the profitable pair)
+   - `amountIn`: Use the value returned from `shouldIteratePairList`
+   - `slippageTolerance`: Use the value returned from `shouldIteratePairList`
+   - `gasUsed`: Use the value returned from `shouldIteratePairList`
+   - `dryRun`: false (to actually execute the trade)
+
+3. Confirm the transaction and pay the gas fee
+
+### Withdrawing Profits
+
+1. To withdraw tokens from the contract, go to "Write Contract" section
+2. Call `withdrawTokens` with:
+   - `token`: The address of the token you want to withdraw
+
+### Important Notes
+
+- Only the contract owner can execute trades and withdrawals
+- Always check profitability before executing trades
+- Monitor your contract's performance and adjust parameters as needed
+- Consider the gas costs of transactions when evaluating profitability
+
 ## Contract Architecture
 
 The contract system consists of:
