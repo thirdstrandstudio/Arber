@@ -16,8 +16,7 @@ Arber is a sophisticated arbitrage system that identifies and executes profitabl
 
 For testing we ignored gas fees and tested a few transactions:
 
-1.
-https://bscscan.com/tx/0xd80178b10213d3011996a04aaa3f74887a208f85220181ae1a2340bee773e015
+1. https://bscscan.com/tx/0xd80178b10213d3011996a04aaa3f74887a208f85220181ae1a2340bee773e015
 
 ![image](https://github.com/user-attachments/assets/917ccae5-03d3-46e2-a562-6d172b951998)
 
