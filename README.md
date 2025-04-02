@@ -31,6 +31,23 @@ https://bscscan.com/tx/0xd80178b10213d3011996a04aaa3f74887a208f85220181ae1a2340b
 
 ![image](https://github.com/user-attachments/assets/7d17e374-f3c8-4fe5-8a33-ad5b8c55cd25)
 
+## Router Compatibility
+
+### Uniswap V2 Interface Support Only
+
+The Arber contract is **designed to work exclusively with routers that implement the Uniswap V2 interface** (`IUniswapV2Router02`). This includes many popular DEXs that maintain backward compatibility with this interface. **Uniswap V3 and other newer DEX interfaces are not supported** in this version.
+
+### Supported DEXs
+
+The default deployment includes the following routers:
+
+- PancakeSwap V2 (`0x10ED43C718714eb63d5aA57B78B54704E256024E`)
+- Uniswap V2 (`0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24`) 
+- ApeSwap (`0xcF0feBd3f17CEf5b47b0cD257aCf6025c5BFf3b7`)
+- SushiSwap (`0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506`)
+
+You can add or remove routers using the provided scripts as long as they implement the Uniswap V2 router interface. The contract's functionality depends on these routers providing consistent responses to the `getAmountsOut` method.
+
 ## Professional Version Available
 
 ### [⚡ Upgrade to Professional Arber ⚡](https://thirdstrandstudio.com/products/arber)
