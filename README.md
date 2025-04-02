@@ -1,6 +1,6 @@
 # Arber - Arbitrage Smart Contract
 
-An Ethereum-based smart contract system that automates arbitrage opportunities across multiple decentralized exchanges.
+An Ethereum-based smart contract system that automates arbitrage opportunities across multiple decentralized exchanges. Supported on any EVM networks
 
 [![Get Professional Version](https://img.shields.io/badge/Upgrade%20to-Professional%20Version-blue?style=for-the-badge)](https://thirdstrandstudio.com/products/arber)
 
