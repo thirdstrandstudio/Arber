@@ -11,6 +11,28 @@ Arber is a sophisticated arbitrage system that identifies and executes profitabl
 3. Execute trades only when profitable
 4. Allow for upgradability via the UUPS (Universal Upgradeable Proxy Standard) pattern
 
+
+For testing we ignored gas fees and tested a few transactions:
+
+1.
+https://bscscan.com/tx/0xd80178b10213d3011996a04aaa3f74887a208f85220181ae1a2340bee773e015
+
+![image](https://github.com/user-attachments/assets/917ccae5-03d3-46e2-a562-6d172b951998)
+
+
+2. https://bscscan.com/tx/0x97701d6f17fcaf94860583d6b5b2bd0fce62461431ec987ae15b3d1649bf6511
+
+![image](https://github.com/user-attachments/assets/9bfdc460-2dc0-4adc-b7c1-42b60d436c46)
+
+
+3. https://bscscan.com/tx/0xe403af85d253f26ccbf465188614619df1ba548a856f837b4144d78b0361455b
+
+![image](https://github.com/user-attachments/assets/7d17e374-f3c8-4fe5-8a33-ad5b8c55cd25)
+
+
+
+
+
 ## Key Features
 
 - **Automated Arbitrage**: Identifies and executes profitable arbitrage opportunities
