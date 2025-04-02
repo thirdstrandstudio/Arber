@@ -16,7 +16,11 @@ contract IteratePairList is Script {
         
         
         vm.startBroadcast(pk);
+                
         IArberUpgradeable.IteratePairListInput memory iteratePairListInput = arber.shouldIteratePairList(0, 11, 1000000 gwei, 0, 100);
+
+
+        //Checks if contract will make a profit before iterating
         if(iteratePairListInput.shouldIterate) {
             arber.iteratePairList(iteratePairListInput.start, 1, iteratePairListInput.amountIn, iteratePairListInput.slippageTolerance, iteratePairListInput.gasUsed, false);
         }

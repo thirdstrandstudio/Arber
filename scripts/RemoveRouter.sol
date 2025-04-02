@@ -8,15 +8,14 @@ contract RemoveRouter is Script {
     function run() external {
         // Load private key and addresses from environment variables
         uint256 pk = vm.envUint("PRIVATE_KEY");
-        //address token0 = vm.envAddress("TOKEN0_ADDRESS");
-        //address token1 = vm.envAddress("TOKEN1_ADDRESS");
+        address router = vm.envAddress("ROUTER_ADDRESS");
         address arberAddress = vm.envAddress("ARBER_ADDRESS");
 
         // Cast the deployed ArberUpgradeable contract
         ArberUpgradeable arber = ArberUpgradeable(arberAddress);
 
         vm.startBroadcast(pk);
-        arber.removeRouter(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+        arber.removeRouter(router);
         vm.stopBroadcast();
     }
 }

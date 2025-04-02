@@ -21,8 +21,9 @@ contract UpgradeArberScript is Script {
 
 
         address[] memory routers = new address[](2);
-        routers[0] = address(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff); // Replace with actual router addresses
-        routers[1] = address(0xedf6066a2b290C185783862C7F4776A2C8077AD1); // Replace with
+        // Replace with actual router addresses
+        routers[0] = address(0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff);
+        routers[1] = address(0xedf6066a2b290C185783862C7F4776A2C8077AD1);
 
         // Encode initializer data
         bytes memory initData = abi.encodeWithSelector(

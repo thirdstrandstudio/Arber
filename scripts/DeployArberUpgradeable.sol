@@ -10,6 +10,7 @@ contract DeployArberUpgradeable is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address wethAddress = vm.envAddress("WETH");
+        
         vm.startBroadcast(deployerPrivateKey);
 
         address[] memory routers = new address[](4);
