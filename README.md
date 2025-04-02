@@ -2,6 +2,8 @@
 
 An Ethereum-based smart contract system that automates arbitrage opportunities across multiple decentralized exchanges.
 
+[![Get Professional Version](https://img.shields.io/badge/Upgrade%20to-Professional%20Version-blue?style=for-the-badge)](https://thirdstrandstudio.com/products/arber)
+
 ## Overview
 
 Arber is a sophisticated arbitrage system that identifies and executes profitable trades across different DEXs (Decentralized Exchanges) such as Uniswap, PancakeSwap, and more. The contract is designed to:
@@ -29,9 +31,23 @@ https://bscscan.com/tx/0xd80178b10213d3011996a04aaa3f74887a208f85220181ae1a2340b
 
 ![image](https://github.com/user-attachments/assets/7d17e374-f3c8-4fe5-8a33-ad5b8c55cd25)
 
+## Professional Version Available
 
+### [⚡ Upgrade to Professional Arber ⚡](https://thirdstrandstudio.com/products/arber)
 
+The open-source version you're viewing provides basic arbitrage functionality. Our professional version includes advanced features:
 
+#### Advanced Features
+- **Mempool Monitoring**: Detects price changes in the mempool and executes arbitrage in the same block
+- **AI-Powered Path Finding**: Uses OptaPlanner constraint solver AI to identify optimal arbitrage paths
+- **Multi-Path Arbitrage**: Extends beyond 2-path arbitrage to identify complex profitable routes across multiple tokens and DEXs
+- **Lightning-Fast Execution**: Optimized for minimal latency with concurrent processing
+- **Advanced Analytics Dashboard**: Real-time performance tracking and visualization
+- **Automated Trade Execution**: Fully automated system requiring minimal oversight
+
+![Arber Professional](https://img.shields.io/badge/Arber-Professional-orange?style=for-the-badge)
+
+The professional version is available through [Third Strand Studio](https://thirdstrandstudio.com/products/arber) and includes setup support.
 
 ## Key Features
 
@@ -40,6 +56,46 @@ https://bscscan.com/tx/0xd80178b10213d3011996a04aaa3f74887a208f85220181ae1a2340b
 - **Gas-Aware**: Accounts for gas costs when calculating profitability
 - **View Function Profitability Check**: Uses `shouldIteratePairList` view function to check if trades will be profitable before execution
 - **Upgradeable Design**: Uses OpenZeppelin's UUPS pattern for contract upgrades
+
+## Understanding Profitability Calculations
+
+### How Arber Determines Profit
+
+The Arber contract uses a sophisticated process to identify and execute only profitable arbitrage opportunities:
+
+1. **Price Comparison**: The contract compares the price of a token pair across different DEXs (routers) to find disparities.
+
+2. **WETH-Based Gas Cost Calculation**: 
+   - Arber uses Wrapped Ether (WETH) as a base currency to estimate gas costs in terms of token value
+   - When calculating if a trade is profitable, it converts the gas cost to an equivalent amount of the token being traded
+   - This allows the contract to accurately determine if the profit exceeds the cost of executing the transaction
+
+3. **Calculation Process**:
+   - First, the contract obtains the best buy and sell prices across all configured routers
+   - Then, it calculates the potential profit: `sellAmount - amountIn`
+   - Next, it estimates the gas cost in WETH and converts it to token0 value using `getWethPriceInToken0`
+   - Finally, it compares: if `profit > wethPriceInToken0`, the trade is profitable
+
+### Supported Tokens
+
+The contract is **not limited to stablecoins**. It can work with any ERC20 token pairs that:
+
+1. Have sufficient liquidity on at least two different DEXs
+2. Can be priced relative to WETH (directly or indirectly)
+
+For optimal operation, token pairs should:
+- Have a price path to WETH on at least one router
+- Have enough liquidity to execute trades without significant slippage
+- Exhibit price differences across different exchanges
+
+### Pricing Mechanism
+
+The `getWethPaths` function identifies possible paths between tokens and WETH, which are used to:
+1. Convert gas costs (denominated in ETH) to token values
+2. Provide a common denomination for comparing different token pairs
+3. Allow the contract to work with a wide variety of tokens, not just stablecoins
+
+If a token doesn't have a direct path to WETH, the contract attempts to find a path through the paired token.
 
 ## For Non-Technical Users
 
